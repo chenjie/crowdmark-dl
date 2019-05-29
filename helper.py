@@ -1,19 +1,36 @@
 import requests
 import os
 import sys
+import getpass
 
 class CMStudent:
-    def __init__(self, cm_session_id, cm_uuid):
-        self.cm_session_id = cm_session_id
-        self.cm_uuid = cm_uuid
+    def __init__(self):
+        self.session = requests.Session()
         self.cm_course_json = None
+
+    def signIn(self):
+        username = input('CM Email: ')
+        password = getpass.getpass('CM Password:')
+
+        payload = {'user[email]': username, 'user[password]': password}
+        cookies = self.session.post('https://app.crowdmark.com/sign-in', data=payload).cookies.get_dict()
+        if 'cm_uuid' not in cookies:
+            print("Login Failed. Incorrect email or password.", file=sys.stderr)
+            sys.exit(1)
+        
+        print("Email and password have been verified.")
+        print()
 
     def getAllCourses(self):
         payload = {'all': 'true', 'filter[is_student]': 'true'}
         url = 'https://app.crowdmark.com/api/v2/courses'
-        cookies = {'cm_session_id': self.cm_session_id, 'cm_uuid': self.cm_uuid}
-        self.cm_course_json = requests.get(url, params=payload, cookies=cookies).json()
-
+        r = self.session.get(url, params=payload)
+        if r.status_code == 200:
+            self.cm_course_json = r.json()
+        else:
+            print("getAllCourses Failed.", file=sys.stderr)
+            sys.exit(1)
+        
     def showAllCourses(self):
         print("All the courses records on Crowdmark:")
         for i in range(len(self.cm_course_json['data'])):
@@ -30,8 +47,12 @@ class CMStudent:
     def showAllTestsAndAssignments(self, course_name):
         payload = {'filter[course]': course_name}
         url = 'https://app.crowdmark.com/api/v2/student/assignments'
-        cookies = {'cm_session_id': self.cm_session_id, 'cm_uuid': self.cm_uuid}
-        r_dict = requests.get(url, params=payload, cookies=cookies).json()
+        r = self.session.get(url, params=payload)
+        if r.status_code == 200:
+            r_dict = r.json()
+        else:
+            print("showAllTestsAndAssignments Failed.", file=sys.stderr)
+            sys.exit(1)
 
         assessment_id_list = []
         print("All tests & assignments of the course {}:".format(course_name))
@@ -46,8 +67,12 @@ class CMStudent:
     
     def downloadAssessment(self, assessment_id, base_dir):
         url = 'https://app.crowdmark.com/api/v1/student/results/{}'.format(assessment_id)
-        cookies = {'cm_session_id': self.cm_session_id, 'cm_uuid': self.cm_uuid}
-        r_dict = requests.get(url, cookies=cookies).json()
+        r = self.session.get(url)
+        if r.status_code == 200:
+            r_dict = r.json()
+        else:
+            print("showAllTestsAndAssignments Failed.", file=sys.stderr)
+            sys.exit(1)
 
         out_dir = os.path.join(base_dir, r_dict['included'][0]['attributes']['title'])
         os.mkdir(out_dir)
