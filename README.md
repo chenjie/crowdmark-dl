@@ -74,3 +74,6 @@ Bye.
 
 ## Result (jpeg img)
 ![example-img](https://user-images.githubusercontent.com/25379724/58531651-11d6e000-81b1-11e9-98fc-1a468950bc81.jpeg)
+
+## License
+[MIT](LICENSE)
