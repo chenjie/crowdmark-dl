@@ -7,6 +7,8 @@ if __name__ == "__main__":
     student.signIn()
 
     base_dir = input('Output directory: ')
+    if not os.path.exists(base_dir):
+        os.mkdir(base_dir)
 
     student.getAllCourses()
 
