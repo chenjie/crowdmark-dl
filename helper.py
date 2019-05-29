@@ -22,6 +22,7 @@ class CMStudent:
     def getCourseNameFromStdin(self):
         d = input("Please enter an index to select a course (type 'q' to quit): ")
         if d == 'q':
+            print("Bye.")
             sys.exit()
         idx_selected = int(d)
         return self.cm_course_json['data'][idx_selected]['id']
@@ -57,8 +58,6 @@ class CMStudent:
             if r_dict['included'][i]['type'] in ['exam-pages']:
                 jpeg_page_link = r_dict['included'][i]['attributes']['url']
                 jpeg_pages_url_list.append(jpeg_page_link)
-                # print('#{}: '.format(r_dict['included'][i]['attributes']['number']) + jpeg_page_link)
-                # print()
 
         total_pages = len(jpeg_pages_url_list)
         for i in range(total_pages):
@@ -72,3 +71,4 @@ class CMStudent:
                 abs_filename = os.path.join(out_dir, "{}.txt".format(i+1))
             with open(abs_filename, 'wb') as f:
                 f.write(r.content)
+        print()
