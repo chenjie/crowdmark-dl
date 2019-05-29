@@ -2,6 +2,8 @@ import requests
 import os
 import sys
 import getpass
+from PIL import Image
+from io import BytesIO
 
 class CMStudent:
     def __init__(self):
@@ -74,8 +76,7 @@ class CMStudent:
             print("showAllTestsAndAssignments Failed.", file=sys.stderr)
             sys.exit(1)
 
-        out_dir = os.path.join(base_dir, r_dict['included'][0]['attributes']['title'])
-        os.mkdir(out_dir)
+        # os.mkdir(out_dir)
 
         jpeg_pages_url_list = []
         print("Title: {}".format(r_dict['included'][0]['attributes']['title']))
@@ -85,15 +86,21 @@ class CMStudent:
                 jpeg_pages_url_list.append(jpeg_page_link)
 
         total_pages = len(jpeg_pages_url_list)
+        im_list = []
         for i in range(total_pages):
             print("[{}/{}] Downloading ... ".format(i+1, total_pages), end = '')
             r = requests.get(jpeg_pages_url_list[i])
             if r.status_code == 200:
                 print("OK")
-                abs_filename = os.path.join(out_dir, "{}.jpeg".format(i+1))
+                # abs_filename = os.path.join(out_dir, "{}.jpeg".format(i+1))
+                im_list.append(Image.open(BytesIO(r.content)))
             else:
                 print("ERROR")
-                abs_filename = os.path.join(out_dir, "{}.txt".format(i+1))
-            with open(abs_filename, 'wb') as f:
-                f.write(r.content)
+                # abs_filename = os.path.join(out_dir, "{}.txt".format(i+1))
+            # with open(abs_filename, 'wb') as f:
+            #     f.write(r.content)
+
+        assert len(im_list) > 0
+        out_pdf_filename = os.path.join(base_dir, r_dict['included'][0]['attributes']['title'])
+        im_list[0].save(out_pdf_filename + ".pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
         print()
