@@ -1,6 +1,18 @@
 # crowdmark-dl
 Command-line program to download assignments and exam results from Crowdmark, an Online Grading Software
 
+## Install Dependencies
+
+### conda
+```
+conda install --file requirements.txt
+```
+
+### pip3
+```
+pip3 install -r requirements.txt
+```
+
 ## Usage
 TBA
 
