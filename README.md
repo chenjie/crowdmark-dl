@@ -1,7 +1,13 @@
 # crowdmark-dl
-Command-line program to download assignments and exam results from Crowdmark, an Online Grading Software
+📝Command-line program to download assignments and exam results from Crowdmark (an Online Grading Software)
+
+## Prerequisites
+* Python3
 
 ## Install Dependencies
+* [Pillow](https://python-pillow.org/)
+* [requests](https://2.python-requests.org//en/latest/)
+* [tqdm](https://tqdm.github.io/)
 
 ### conda
 ```
@@ -14,7 +20,9 @@ pip3 install -r requirements.txt
 ```
 
 ## Usage
-TBA
+```
+python3 cm-dl.py
+```
 
 ## Collaborators
 
