@@ -1,5 +1,5 @@
 import requests
-from helper import CMStudent
+from student import CMStudent
 import os
 
 if __name__ == "__main__":
@@ -27,7 +27,9 @@ if __name__ == "__main__":
 
         idx_selected = int(input("Please enter an index to select an assessment: "))
         if idx_selected == len(assessment_id_list):
-            for ass in assessment_id_list:
-                student.downloadAssessment(ass, course_dir)
+            for assessment_id in assessment_id_list:
+                cma = student.getAssessmentMetadata(assessment_id)
+                student.downloadAssessment(cma, course_dir)
         else:
-            student.downloadAssessment(assessment_id_list[idx_selected], course_dir)
+            cma = student.getAssessmentMetadata(assessment_id_list[idx_selected])
+            student.downloadAssessment(cma, course_dir)
