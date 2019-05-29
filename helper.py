@@ -10,7 +10,7 @@ class CMStudent:
 
     def signIn(self):
         username = input('CM Email: ')
-        password = getpass.getpass('CM Password:')
+        password = getpass.getpass('CM Password: ')
 
         payload = {'user[email]': username, 'user[password]': password}
         cookies = self.session.post('https://app.crowdmark.com/sign-in', data=payload).cookies.get_dict()
