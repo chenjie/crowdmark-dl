@@ -19,7 +19,7 @@ conda install --file requirements.txt
 pip3 install -r requirements.txt
 ```
 
-## Usage
+## Usage (*subject to change*)
 ```
 python3 cm-dl.py
 ```
@@ -31,7 +31,7 @@ python3 cm-dl.py
 | Chenjie (Jack) Ni       | [jellycsc](https://github.com/jellycsc)    | nichenjie2013@gmail.com
 | Runqi (KiKi) Bi         | [kiki1415926](https://github.com/kiki1415926)    | runqi.bi@mail.utoronto.ca
 
-## Initial Example (*subject to change*)
+## Initial Demo (*subject to change*)
 ```
 $ python cm-dl.py
 CM Email: <UTORid Removed>@mail.utoronto.ca
