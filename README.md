@@ -8,6 +8,7 @@
 * [Pillow](https://python-pillow.org/)
 * [requests](https://2.python-requests.org//en/latest/)
 * [tqdm](https://tqdm.github.io/)
+* [arrow](https://arrow.readthedocs.io/en/latest/)
 
 ### conda
 ```
