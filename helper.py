@@ -2,8 +2,9 @@ import requests
 import os
 import sys
 import getpass
-from PIL import Image
+from PIL import Image, ImageDraw
 from io import BytesIO
+from tqdm import tqdm
 
 class CMStudent:
     def __init__(self):
@@ -13,6 +14,7 @@ class CMStudent:
     def signIn(self):
         username = input('CM Email: ')
         password = getpass.getpass('CM Password: ')
+        # password = input('CM Password: ')
 
         payload = {'user[email]': username, 'user[password]': password}
         cookies = self.session.post('https://app.crowdmark.com/sign-in', data=payload).cookies.get_dict()
@@ -67,7 +69,7 @@ class CMStudent:
 
         return assessment_id_list
     
-    def downloadAssessment(self, assessment_id, base_dir):
+    def downloadAssessment(self, assessment_id, course_dir):
         url = 'https://app.crowdmark.com/api/v1/student/results/{}'.format(assessment_id)
         r = self.session.get(url)
         if r.status_code == 200:
@@ -75,8 +77,6 @@ class CMStudent:
         else:
             print("showAllTestsAndAssignments Failed.", file=sys.stderr)
             sys.exit(1)
-
-        # os.mkdir(out_dir)
 
         jpeg_pages_url_list = []
         print("Title: {}".format(r_dict['included'][0]['attributes']['title']))
@@ -87,20 +87,19 @@ class CMStudent:
 
         total_pages = len(jpeg_pages_url_list)
         im_list = []
-        for i in range(total_pages):
-            print("[{}/{}] Downloading ... ".format(i+1, total_pages), end = '')
+        print("Downloading ... ")
+        for i in tqdm(range(total_pages)):
             r = requests.get(jpeg_pages_url_list[i])
             if r.status_code == 200:
-                print("OK")
-                # abs_filename = os.path.join(out_dir, "{}.jpeg".format(i+1))
                 im_list.append(Image.open(BytesIO(r.content)))
-            else:
-                print("ERROR")
-                # abs_filename = os.path.join(out_dir, "{}.txt".format(i+1))
-            # with open(abs_filename, 'wb') as f:
-            #     f.write(r.content)
+            # else:
+                # print("ERROR")
+                # if i != 0:
+                #     new_img = Image.new('RGB', im_list[0].size, (255, 255, 255))
+                #     ImageDraw.Draw(new_img).text((0, 0), 'Hello world!', (0, 0, 0))
+                #     im_list.append(new_img)
 
         assert len(im_list) > 0
-        out_pdf_filename = os.path.join(base_dir, r_dict['included'][0]['attributes']['title'])
+        out_pdf_filename = os.path.join(course_dir, r_dict['included'][0]['attributes']['title'])
         im_list[0].save(out_pdf_filename + ".pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
         print()
