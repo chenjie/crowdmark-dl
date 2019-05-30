@@ -4,6 +4,11 @@
 
 📝Command-line program to download assignments and exam results from Crowdmark (an Online Grading Software)
 
+## [Demo PDF](https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf)
+
+<a href="https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf"><img src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png" 
+      width="109" height="20"></a><br>
+
 ## Prerequisites
 
 * Python3
@@ -74,10 +79,6 @@ Downloading ...
 100%|████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02<00:00,  5.33it/s]
 ```
 
-## [Demo PDF](https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf)
-
-<a href="https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf"><img src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png" 
-      width="109" height="20"></a><br>
-
 ## License
+
 [MIT](LICENSE)
