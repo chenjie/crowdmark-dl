@@ -2,6 +2,7 @@ import requests
 from student import CMStudent
 import os
 
+
 if __name__ == "__main__":
     student = CMStudent()
     student.signIn()
