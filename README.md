@@ -1,5 +1,7 @@
 # crowdmark-dl
 
+[![MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 📝Command-line program to download assignments and exam results from Crowdmark (an Online Grading Software)
 
 ## Prerequisites
@@ -38,7 +40,7 @@ python3 cm-dl.py
 | Chenjie (Jack) Ni       | [jellycsc](https://github.com/jellycsc)    | nichenjie2013@gmail.com
 | Runqi (KiKi) Bi         | [kiki1415926](https://github.com/kiki1415926)    | runqi.bi@mail.utoronto.ca
 
-## Initial Demo (*subject to change*)
+## CLI Demo (*subject to change*)
 
 ```
 $ python cm-dl.py
@@ -72,13 +74,10 @@ Downloading ...
 100%|████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02<00:00,  5.33it/s]
 ```
 
-## Example Results
+## Demo [PDF](https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf)
 
-![example-dir1](https://user-images.githubusercontent.com/25379724/58580262-ade90180-821a-11e9-8c84-da5cc991cc79.png)
-![example-dir2](https://user-images.githubusercontent.com/25379724/58580260-ade90180-821a-11e9-9752-01a9880801c9.png)
-![example-dir3](https://user-images.githubusercontent.com/25379724/58580259-ade90180-821a-11e9-8220-e0e9afa7e7f6.png)
-![example-pdf](https://user-images.githubusercontent.com/25379724/58580258-ad506b00-821a-11e9-9460-4f4e12bb58c5.png)
-![example-img](https://user-images.githubusercontent.com/25379724/58531651-11d6e000-81b1-11e9-98fc-1a468950bc81.jpeg)
+<a href="https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf"><img src="https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.png" 
+      width="109" height="20"></a><br>
 
 ## License
 [MIT](LICENSE)
