@@ -6,7 +6,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 import arrow
-from assessment import CMAssessment
+from assessment import CMAssessment, CMQuestion, CMInstructor
 
 
 class CMStudent:
@@ -85,71 +85,139 @@ class CMStudent:
         if r.status_code == 200:
             r_dict = r.json()
         else:
-            print("showAllTestsAndAssignments Failed.", file=sys.stderr)
+            print("getAssessmentMetadata Failed.", file=sys.stderr)
+            sys.exit(1)
+        
+        cma = CMAssessment(assessment_id)
+        cma.setAssessmentIdV2(r_dict['included'][0]['id'])
+
+        url = 'https://app.crowdmark.com/api/v2/student/assignments/{}'.format(cma.assessment_id_v2)
+        r = self.session.get(url)
+        if r.status_code == 200:
+            r_dict_v2 = r.json()
+        else:
+            print("getAssessmentMetadata Failed.", file=sys.stderr)
             sys.exit(1)
 
-        cma = CMAssessment(assessment_id)
-        cma.assessment_name = r_dict['included'][0]['attributes']['title']
-        cma.points = int(float(r_dict['data']['attributes']['total']))
-        cma.total_points = int(float(r_dict['included'][0]['attributes']['total-points']))
-        cma.mark_sent_out_date = arrow.get(r_dict['included'][0]['attributes']['marks-sent-at'])
+        cma.setCourseName(r_dict['included'][1]['attributes']['name'])
+        cma.setAssessmentName(r_dict['included'][0]['attributes']['title'])
+        cma.setScoreAndTotalPoints(
+            int(float(r_dict['data']['attributes']['total'])),
+            int(float(r_dict['included'][0]['attributes']['total-points']))
+        )
+        cma.setDate(arrow.get(r_dict['included'][0]['attributes']['marks-sent-at']))
+        cmi = CMInstructor(
+            r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_name_full'],
+            r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_contact_email_primary']
+        )
+        cma.setInstructor(cmi)
 
         print("Title: {}".format(cma.assessment_name))
+        # Add Qs
+        q_data = r_dict_v2['data']['relationships']['questions']['data']
+        for i in range(len(q_data)):
+            assert q_data[i]['type'] == 'assignment-questions'
+            Q = CMQuestion(q_data[i]['id'])
+            cma.addQ(q_data[i]['id'], Q)
+            
+        # print(cma.id2Q_dict)
+        
+        # Add totalPoints and exam page urls
+        for i in range(len(r_dict_v2['included'])):
+            cm_entry_v2 = r_dict_v2['included'][i]
+            cm_type_v2 = cm_entry_v2['type']
+            if cm_type_v2 == 'assignment-questions':
+                question_id = cm_entry_v2['id']
+                cma.id2Q_dict[question_id].setTotalPoints(
+                    cm_entry_v2['attributes']['points']
+                )
+                cma.id2Q_dict[question_id].setSeq(cm_entry_v2['attributes']['sequence'])
+            elif cm_type_v2 == 'assignment-pages':
+                question_id = str(cm_entry_v2['relationships']['question']['data']['id'])
+                page_id = cm_entry_v2['id']
+                page_url = cm_entry_v2['attributes']['url']
+                cma.id2Q_dict[question_id].addPage(page_id, page_url)
+
+        # Add points and annotations
         for i in range(len(r_dict['included'])):
             cm_entry = r_dict['included'][i]
             cm_type = cm_entry['type']
-            if cm_type == 'exam-pages':
-                cma.exam_pages_url.append(cm_entry['attributes']['url'])
-            elif cm_type == 'exam-master-questions':
-                cma.exam_master_questions_total_points.append(cm_entry['attributes']['points'])
-            elif cm_type == 'exam-questions':
-                cma.exam_questions_points.append(cm_entry['attributes']['points'])
-        
-        assert len(cma.exam_questions_points) == len(cma.exam_master_questions_total_points)
-        cma.num_of_pages = len(cma.exam_questions_points)
+            if cm_type == 'evaluations':
+                question_id = cm_entry['relationships']['exam-question']['data']['id']
+                cma.id2Q_dict[question_id].setPoints(
+                    cm_entry['attributes']['points']
+                )
+            elif cm_type == 'annotations':
+                pass
 
         return cma
     
     def downloadAssessment(self, cma, course_dir):
         # PIL image related config
         im_list = []
-        font = ImageFont.truetype("google-fonts/OpenSans-Regular.ttf", 20)
-
-        num_of_entries = len(cma.exam_pages_url)
-        cur_page = 0
+        font = ImageFont.truetype("google-fonts/OpenSans-Regular.ttf", 30)
         print("Downloading ... ")
-        # tqdm progress bar :)
-        with tqdm(total=cma.num_of_pages) as pbar:
-            for i in range(num_of_entries):
-                r = requests.get(cma.exam_pages_url[i])
+
+        # Put Qs in order
+        num_of_q = len(cma.id2Q_dict)
+        question_arr = [None for _ in range(num_of_q)]
+        for question_id in cma.id2Q_dict:
+            question = cma.id2Q_dict[question_id]
+            idx = question.seq - 1
+            question_arr[idx] = question
+
+        first_page = True
+        for question in tqdm(question_arr):
+            page_list = [None for _ in range(question.approximate_num_pages)]
+            for pid in question.pid2pageInfo_dict:
+                cursor_pos = 0
+                r = requests.get(question.pid2pageInfo_dict[pid]['url'])
                 if r.status_code != 200:
                     continue
 
-                cursor_pos = 0
                 pil_img = Image.open(BytesIO(r.content))
-                if not im_list:
+                if first_page and (question.seq == 1):
+                    first_page = False
                     # First page
                     ImageDraw.Draw(pil_img).text((0, 0), 
                         'Title: {}'.format(cma.assessment_name), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 25), 
-                        'Marks Sent At: {}'.format(cma.mark_sent_out_date.to('local').format(
+                    ImageDraw.Draw(pil_img).text((0, 30), 
+                        'Course Name: {}'.format(cma.course_name), (0, 0, 255), font=font)
+                    ImageDraw.Draw(pil_img).text((0, 60), 
+                        'Instructor: {}'.format(cma.instructor.name), (0, 0, 255), font=font)
+                    ImageDraw.Draw(pil_img).text((0, 90), 
+                        'Instructor Email: {}'.format(cma.instructor.email), (0, 0, 255), font=font)
+                    ImageDraw.Draw(pil_img).text((0, 120), 
+                        'Date: {}'.format(cma.mark_sent_out_date.to('local').format(
                             'YYYY-MM-DD dddd HH:mm:ss ZZZ')), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 50), 
+                    ImageDraw.Draw(pil_img).text((0, 150), 
                         'Total Score: {}% ({}/{})'.format(int(cma.points/cma.total_points * 100), 
                         cma.points, cma.total_points), (0, 0, 255), font=font)
-                    cursor_pos += 75
-
-                if cma.exam_questions_points[cur_page] == 'null':
-                    ImageDraw.Draw(pil_img).text((0, cursor_pos), 
-                        'Not graded.', (255, 0, 0), font=font)
+                    cursor_pos += 180
+                
+                if not any(page_list):
+                    if question.points == 'null':
+                        ImageDraw.Draw(pil_img).text((0, cursor_pos), 
+                            'Not graded.', (255, 0, 0), font=font)
+                    else:
+                        ImageDraw.Draw(pil_img).text((0, cursor_pos), 
+                            'Score: {}/{}'.format(cma.points, cma.total_points), (255, 0, 0), font=font)
                 else:
                     ImageDraw.Draw(pil_img).text((0, cursor_pos), 
-                        'Score: {}/{}'.format(cma.exam_questions_points[cur_page], 
-                        cma.exam_master_questions_total_points[cur_page]), (255, 0, 0), font=font)
-                im_list.append(pil_img)
-                cur_page += 1
-                pbar.update(1)
+                            'Cont.', (255, 0, 0), font=font)
 
+                # Add to page_list first
+                idx = question.pid2pageInfo_dict[pid]['seq_approx']
+                page_list[idx] = pil_img
+
+            # Add to im_list
+            for page in page_list:
+                if page is not None:
+                    im_list.append(page)
+                
+        self._savePDF(cma, im_list, course_dir)
+
+    def _savePDF(self, cma, im_list, course_dir):
         assert len(im_list) > 0
         out_pdf_filename = os.path.join(course_dir, cma.assessment_name)
         im_list[0].save(out_pdf_filename + ".pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
