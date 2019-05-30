@@ -6,7 +6,8 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 import arrow
-from assessment import CMAssessment, CMQuestion, CMInstructor
+from assess_objs import CMAssessment, CMQuestion, CMInstructor
+from pil_helpers import savePDF, drawFrontPageText, drawTextBasedOnPageList, adjustFontSize
 
 
 class CMStudent:
@@ -119,8 +120,6 @@ class CMStudent:
             assert q_data[i]['type'] == 'assignment-questions'
             Q = CMQuestion(q_data[i]['id'])
             cma.addQ(q_data[i]['id'], Q)
-            
-        # print(cma.id2Q_dict)
         
         # Add totalPoints and exam page urls
         for i in range(len(r_dict_v2['included'])):
@@ -155,7 +154,7 @@ class CMStudent:
     def downloadAssessment(self, cma, course_dir):
         # PIL image related config
         im_list = []
-        font = ImageFont.truetype("google-fonts/OpenSans-Regular.ttf", 30)
+        font = None
         print("Downloading ... ")
 
         # Put Qs in order
@@ -176,35 +175,14 @@ class CMStudent:
                     continue
 
                 pil_img = Image.open(BytesIO(r.content))
+                if not font:
+                    font = adjustFontSize(pil_img)
                 if first_page and (question.seq == 1):
                     first_page = False
-                    # First page
-                    ImageDraw.Draw(pil_img).text((0, 0), 
-                        'Title: {}'.format(cma.assessment_name), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 30), 
-                        'Course Name: {}'.format(cma.course_name), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 60), 
-                        'Instructor: {}'.format(cma.instructor.name), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 90), 
-                        'Instructor Email: {}'.format(cma.instructor.email), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 120), 
-                        'Date: {}'.format(cma.mark_sent_out_date.to('local').format(
-                            'YYYY-MM-DD dddd HH:mm:ss ZZZ')), (0, 0, 255), font=font)
-                    ImageDraw.Draw(pil_img).text((0, 150), 
-                        'Total Score: {}% ({}/{})'.format(int(cma.points/cma.total_points * 100), 
-                        cma.points, cma.total_points), (0, 0, 255), font=font)
-                    cursor_pos += 180
+                    pil_img, cursor_pos = drawFrontPageText(cma, pil_img, font)
                 
-                if not any(page_list):
-                    if question.points == 'null':
-                        ImageDraw.Draw(pil_img).text((0, cursor_pos), 
-                            'Not graded.', (255, 0, 0), font=font)
-                    else:
-                        ImageDraw.Draw(pil_img).text((0, cursor_pos), 
-                            'Score: {}/{}'.format(cma.points, cma.total_points), (255, 0, 0), font=font)
-                else:
-                    ImageDraw.Draw(pil_img).text((0, cursor_pos), 
-                            'Cont.', (255, 0, 0), font=font)
+                pil_img = drawTextBasedOnPageList(cma, pil_img, page_list, 
+                    question, cursor_pos, font)
 
                 # Add to page_list first
                 idx = question.pid2pageInfo_dict[pid]['seq_approx']
@@ -215,10 +193,4 @@ class CMStudent:
                 if page is not None:
                     im_list.append(page)
                 
-        self._savePDF(cma, im_list, course_dir)
-
-    def _savePDF(self, cma, im_list, course_dir):
-        assert len(im_list) > 0
-        out_pdf_filename = os.path.join(course_dir, cma.assessment_name)
-        im_list[0].save(out_pdf_filename + ".pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
-        print()
+        savePDF(cma, im_list, course_dir)
