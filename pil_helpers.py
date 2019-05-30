@@ -10,18 +10,18 @@ def savePDF(cma, im_list, course_dir):
 
 def drawFrontPageText(cma, pil_img, font):
     cursor_pos = 0
-    ImageDraw.Draw(pil_img).text((0, 0), 
+    ImageDraw.Draw(pil_img).text((30, 0), 
         'Title: {}'.format(cma.assessment_name), (0, 0, 128), font=font)
-    ImageDraw.Draw(pil_img).text((0, 30), 
+    ImageDraw.Draw(pil_img).text((30, 30), 
         'Course Name: {}'.format(cma.course_name), (0, 0, 128), font=font)
-    ImageDraw.Draw(pil_img).text((0, 60), 
+    ImageDraw.Draw(pil_img).text((30, 60), 
         'Instructor: {}'.format(cma.instructor.name), (0, 0, 128), font=font)
-    ImageDraw.Draw(pil_img).text((0, 90), 
+    ImageDraw.Draw(pil_img).text((30, 90), 
         'Instructor Email: {}'.format(cma.instructor.email), (0, 0, 128), font=font)
-    ImageDraw.Draw(pil_img).text((0, 120), 
+    ImageDraw.Draw(pil_img).text((30, 120), 
         'Date: {}'.format(cma.mark_sent_out_date.to('local').format(
             'YYYY-MM-DD dddd HH:mm:ss ZZZ')), (0, 0, 128), font=font)
-    ImageDraw.Draw(pil_img).text((0, 150), 
+    ImageDraw.Draw(pil_img).text((30, 150), 
         'Total Score: {}% ({}/{})'.format(int(cma.points/cma.total_points * 100), 
         cma.points, cma.total_points), (165, 42, 42), font=font)
     cursor_pos += 180
@@ -30,14 +30,14 @@ def drawFrontPageText(cma, pil_img, font):
 def drawTextBasedOnPageList(cma, pil_img, page_list, question, cursor_pos, font):
     if not any(page_list):
         if question.points is None:
-            ImageDraw.Draw(pil_img).text((0, cursor_pos), 
+            ImageDraw.Draw(pil_img).text((30, cursor_pos), 
                 'Not graded.', (255, 0, 0), font=font)
         else:
-            ImageDraw.Draw(pil_img).text((0, cursor_pos), 
+            ImageDraw.Draw(pil_img).text((30, cursor_pos), 
                 'Score: {}/{}'.format(question.points, question.total_points
                 ), (255, 0, 0), font=font)
     else:
-        ImageDraw.Draw(pil_img).text((0, cursor_pos), 'Cont.', (255, 0, 0), font=font)
+        ImageDraw.Draw(pil_img).text((30, cursor_pos), 'Cont.', (255, 0, 0), font=font)
     return pil_img
 
 def adjustFontSize(pil_img, img_fraction=0.4):
