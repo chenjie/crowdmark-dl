@@ -166,7 +166,7 @@ class CMStudent:
             question_arr[idx] = question
 
         first_page = True
-        for question in tqdm(question_arr):
+        for question in tqdm(question_arr, unit='questions'):
             page_list = [None for _ in range(question.approximate_num_pages)]
             for pid in question.pid2pageInfo_dict:
                 cursor_pos = 0
