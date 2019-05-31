@@ -47,15 +47,23 @@ class CMStudent:
             sys.exit(1)
         
     def showAllCourses(self):
+        course_list = []
         print("All the courses records on Crowdmark:")
-        for i in range(len(self.cm_course_json['data'])):
+        i = 0
+        while i < len(self.cm_course_json['data']):
+            course_list.append(self.cm_course_json['data'][i]['id'])
             print("[{}] {}".format(i, self.cm_course_json['data'][i]['id']))
+            i += 1
+        print()
+        return course_list
 
     def getCourseNameFromStdin(self):
-        d = input("Please enter an index to select a course (type 'q' to quit): ")
+        d = input("Which course index? ('a' - all, 'q' - quit): ")
         if d == 'q':
             print("Bye.")
             sys.exit()
+        elif d == 'a':
+            return 'a'
         idx_selected = int(d)
         return self.cm_course_json['data'][idx_selected]['id']
 
@@ -77,10 +85,11 @@ class CMStudent:
             print("[{}] {}".format(i, r_dict['data'][i]['relationships']['exam-master']['data']['id']))
             i += 1
         print("[{}] all".format(i))
+        print()
 
         return assessment_id_list
     
-    def getAssessmentMetadata(self, assessment_id):
+    def getAssessmentMetadata(self, assessment_id, course_dir):
         url = 'https://app.crowdmark.com/api/v1/student/results/{}'.format(assessment_id)
         r = self.session.get(url)
         if r.status_code == 200:
@@ -90,7 +99,23 @@ class CMStudent:
             sys.exit(1)
         
         cma = CMAssessment(assessment_id)
+        cma.setAssessmentName(r_dict['included'][0]['attributes']['title'])
+
+        out_pdf_filename = os.path.join(course_dir, cma.assessment_name)
+        if os.path.isfile(out_pdf_filename):
+            # Already downloaded
+            return None
+
         cma.setAssessmentIdV2(r_dict['included'][0]['id'])
+        cma.setCourseName(r_dict['included'][1]['attributes']['name'])
+        if not r_dict['data']['attributes']['total']:
+            cma.setScoreAndTotalPoints(0, 0)
+        else:
+            cma.setScoreAndTotalPoints(
+                int(float(r_dict['data']['attributes']['total'])),
+                int(float(r_dict['included'][0]['attributes']['total-points']))
+            )
+        cma.setDate(arrow.get(r_dict['included'][0]['attributes']['marks-sent-at']))
 
         url = 'https://app.crowdmark.com/api/v2/student/assignments/{}'.format(cma.assessment_id_v2)
         r = self.session.get(url)
@@ -100,16 +125,6 @@ class CMStudent:
             print("getAssessmentMetadata Failed.", file=sys.stderr)
             sys.exit(1)
 
-        cma.setCourseName(r_dict['included'][1]['attributes']['name'])
-        cma.setAssessmentName(r_dict['included'][0]['attributes']['title'])
-        if not r_dict['data']['attributes']['total']:
-            cma.setScoreAndTotalPoints(0, 0)
-        else:
-            cma.setScoreAndTotalPoints(
-                int(float(r_dict['data']['attributes']['total'])),
-                int(float(r_dict['included'][0]['attributes']['total-points']))
-            )
-        cma.setDate(arrow.get(r_dict['included'][0]['attributes']['marks-sent-at']))
         if r_dict_v2['included'][0]['attributes']['embedded-launch-data']:
             cmi = CMInstructor(
                 r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_name_full'],
@@ -172,7 +187,13 @@ class CMStudent:
 
         return cma
     
-    def downloadAssessment(self, cma, course_dir):
+    def downloadAssessment(self, assessment_id, course_dir):
+        cma = self.getAssessmentMetadata(assessment_id, course_dir)
+        
+        if cma is None:
+            # Already downloaded
+            return None
+
         # PIL image related config
         im_list = []
         font = None
