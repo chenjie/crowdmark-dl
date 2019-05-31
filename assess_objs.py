@@ -9,6 +9,11 @@ class CMAssessment:
         self.total_points = None
         self.mark_sent_out_date = None
         self.id2Q_dict = {}
+
+        # backward compatability
+        self.exam_pages_url = []
+        self.exam_questions_points = []
+        self.exam_master_questions_total_points = []
     
     def setInstructor(self, instructor):
         self.instructor = instructor
@@ -41,6 +46,7 @@ class CMQuestion:
         self.total_points = None
         self.seq = None
         self.approximate_num_pages = 0
+        self.found_page_urls = False
     
     def addPage(self, page_id, url):
         self.pid2pageInfo_dict[page_id] = {'url': url, 'seq_approx': self.approximate_num_pages}

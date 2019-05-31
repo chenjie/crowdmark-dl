@@ -110,10 +110,16 @@ class CMStudent:
                 int(float(r_dict['included'][0]['attributes']['total-points']))
             )
         cma.setDate(arrow.get(r_dict['included'][0]['attributes']['marks-sent-at']))
-        cmi = CMInstructor(
-            r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_name_full'],
-            r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_contact_email_primary']
-        )
+        if r_dict_v2['included'][0]['attributes']['embedded-launch-data']:
+            cmi = CMInstructor(
+                r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_name_full'],
+                r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_contact_email_primary']
+            )
+        else:
+            cmi = CMInstructor(
+                "unknown", 
+                r_dict_v2['included'][0]['attributes']['owner-email']
+            )
         cma.setInstructor(cmi)
 
         print("Title: {}".format(cma.assessment_name))
@@ -125,6 +131,7 @@ class CMStudent:
             cma.addQ(q_data[i]['id'], Q)
         
         # Add totalPoints and exam page urls
+        found_page_urls = False
         for i in range(len(r_dict_v2['included'])):
             cm_entry_v2 = r_dict_v2['included'][i]
             cm_type_v2 = cm_entry_v2['type']
@@ -135,11 +142,13 @@ class CMStudent:
                 )
                 cma.id2Q_dict[question_id].setSeq(cm_entry_v2['attributes']['sequence'])
             elif cm_type_v2 == 'assignment-pages':
+                found_page_urls = True
                 question_id = str(cm_entry_v2['relationships']['question']['data']['id'])
                 page_id = cm_entry_v2['id']
                 page_url = cm_entry_v2['attributes']['url']
                 cma.id2Q_dict[question_id].addPage(page_id, page_url)
-
+                cma.id2Q_dict[question_id].found_page_urls = True
+        
         # Add points and annotations
         for i in range(len(r_dict['included'])):
             cm_entry = r_dict['included'][i]
@@ -149,6 +158,15 @@ class CMStudent:
                 cma.id2Q_dict[question_id].setPoints(
                     cm_entry['attributes']['points']
                 )
+            elif cm_type == 'exam-pages':
+                if not found_page_urls:
+                    cma.exam_pages_url.append(cm_entry['attributes']['url'])
+            elif cm_type == 'exam-questions':
+                if not found_page_urls:
+                    cma.exam_questions_points.append(cm_entry['attributes']['points'])
+            elif cm_type == 'exam-master-questions':
+                if not found_page_urls:
+                    cma.exam_master_questions_total_points.append(cm_entry['attributes']['points'])
             elif cm_type == 'annotations':
                 pass
 
@@ -162,13 +180,19 @@ class CMStudent:
 
         # Put Qs in order
         num_of_q = len(cma.id2Q_dict)
-        question_arr = [None for _ in range(num_of_q)]
+        question_arr = [None for _ in range(num_of_q+1)]
         for question_id in cma.id2Q_dict:
             question = cma.id2Q_dict[question_id]
             question_arr[question.seq] = question
+        
+        question_arr = [q for q in question_arr if q is not None]
 
         first_page = True
+        found_page_urls = True
         for question in tqdm(question_arr, unit='questions'):
+            if not question.found_page_urls:
+                found_page_urls = False
+                continue
             page_list = [None for _ in range(question.approximate_num_pages)]
             for pid in question.pid2pageInfo_dict:
                 cursor_pos = 0
@@ -179,7 +203,7 @@ class CMStudent:
                 pil_img = Image.open(BytesIO(r.content))
                 if not font:
                     font = adjustFontSize(pil_img)
-                if first_page and (question.seq == 0):
+                if first_page and (question_arr.index(question) == 0):
                     first_page = False
                     pil_img, cursor_pos = drawFrontPageText(cma, pil_img, font)
                 
@@ -194,5 +218,31 @@ class CMStudent:
             for page in page_list:
                 if page is not None:
                     im_list.append(page)
-                
+
+        if not found_page_urls:
+            cur_page = 0
+            num_of_entries = len(cma.exam_pages_url)
+            for i in range(num_of_entries):
+                cursor_pos = 0
+                r = requests.get(cma.exam_pages_url[i])
+                if r.status_code != 200:
+                    continue
+
+                pil_img = Image.open(BytesIO(r.content))
+                if not font:
+                    font = adjustFontSize(pil_img)
+                if not im_list:
+                    pil_img, cursor_pos = drawFrontPageText(cma, pil_img, font)
+
+                if (cur_page >= len(cma.exam_questions_points)
+                    ) or cma.exam_questions_points[cur_page] is None:
+                    ImageDraw.Draw(pil_img).text((30, cursor_pos), 
+                        'Not graded.', (255, 0, 0), font=font)
+                else:
+                    ImageDraw.Draw(pil_img).text((30, cursor_pos), 
+                        'Score: {}/{}'.format(cma.exam_questions_points[cur_page], 
+                        cma.exam_master_questions_total_points[cur_page]), (255, 0, 0), font=font)
+                im_list.append(pil_img)
+                cur_page += 1
+
         savePDF(cma, im_list, course_dir)
