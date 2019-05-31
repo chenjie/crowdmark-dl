@@ -2,7 +2,7 @@
 
 [![MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-📝Command-line program to download assignments and exam results from Crowdmark (an Online Grading Software)
+📝Command-line program to download assignments and exam papers from Crowdmark (an Online Grading Software)
 
 ## [Demo PDF](https://nbviewer.jupyter.org/github/jellycsc/crowdmark-dl/blob/master/demo/winter-2016-mat223h1-s-lec0301-lec5101-lec0201-le/Midterm%20Exam%20I.pdf)
 
