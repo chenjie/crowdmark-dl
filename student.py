@@ -102,10 +102,13 @@ class CMStudent:
 
         cma.setCourseName(r_dict['included'][1]['attributes']['name'])
         cma.setAssessmentName(r_dict['included'][0]['attributes']['title'])
-        cma.setScoreAndTotalPoints(
-            int(float(r_dict['data']['attributes']['total'])),
-            int(float(r_dict['included'][0]['attributes']['total-points']))
-        )
+        if not r_dict['data']['attributes']['total']:
+            cma.setScoreAndTotalPoints(0, 0)
+        else:
+            cma.setScoreAndTotalPoints(
+                int(float(r_dict['data']['attributes']['total'])),
+                int(float(r_dict['included'][0]['attributes']['total-points']))
+            )
         cma.setDate(arrow.get(r_dict['included'][0]['attributes']['marks-sent-at']))
         cmi = CMInstructor(
             r_dict_v2['included'][0]['attributes']['embedded-launch-data']['lis_person_name_full'],
@@ -162,8 +165,7 @@ class CMStudent:
         question_arr = [None for _ in range(num_of_q)]
         for question_id in cma.id2Q_dict:
             question = cma.id2Q_dict[question_id]
-            idx = question.seq - 1
-            question_arr[idx] = question
+            question_arr[question.seq] = question
 
         first_page = True
         for question in tqdm(question_arr, unit='questions'):
@@ -177,7 +179,7 @@ class CMStudent:
                 pil_img = Image.open(BytesIO(r.content))
                 if not font:
                     font = adjustFontSize(pil_img)
-                if first_page and (question.seq == 1):
+                if first_page and (question.seq == 0):
                     first_page = False
                     pil_img, cursor_pos = drawFrontPageText(cma, pil_img, font)
                 
