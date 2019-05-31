@@ -83,6 +83,10 @@ Downloading ...
 
 ![all-pdfs](https://user-images.githubusercontent.com/25379724/58685592-4d58e200-834a-11e9-90e5-6844e0b51563.png)
 
+## TODO
+
+* Embed annotations
+
 ## License
 
 [MIT](LICENSE)
