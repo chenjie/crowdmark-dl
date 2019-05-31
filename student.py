@@ -222,6 +222,8 @@ class CMStudent:
                     continue
 
                 pil_img = Image.open(BytesIO(r.content))
+                if pil_img.mode != 'RGB':
+                    pil_img = pil_img.convert('RGB')
                 if not font:
                     font = adjustFontSize(pil_img)
                 if first_page and (question_arr.index(question) == 0):
@@ -250,6 +252,8 @@ class CMStudent:
                     continue
 
                 pil_img = Image.open(BytesIO(r.content))
+                if pil_img.mode != 'RGB':
+                    pil_img = pil_img.convert('RGB')
                 if not font:
                     font = adjustFontSize(pil_img)
                 if not im_list:

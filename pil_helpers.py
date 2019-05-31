@@ -3,10 +3,11 @@ import os
 
 
 def savePDF(cma, im_list, course_dir):
-    assert len(im_list) > 0
+    print()
+    if not im_list:
+        return
     out_pdf_filename = os.path.join(course_dir, cma.assessment_name)
     im_list[0].save(out_pdf_filename + ".pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
-    print()
 
 def drawFrontPageText(cma, pil_img, font):
     cursor_pos = 0
