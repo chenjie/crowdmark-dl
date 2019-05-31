@@ -79,6 +79,10 @@ Downloading ...
 100%|████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02<00:00,  5.33it/s]
 ```
 
+## Test By Eyeballing
+
+![all-pdfs](https://user-images.githubusercontent.com/25379724/58685592-4d58e200-834a-11e9-90e5-6844e0b51563.png)
+
 ## License
 
 [MIT](LICENSE)
